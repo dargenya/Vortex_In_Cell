@@ -101,6 +101,7 @@ end = time.time()
 print(U_approx)
 print(" Temps d'execution de solve: ", end-start )
 
+#Q5/ On calcul le champs de vitesse
 p = int(np.sqrt(N))
 h = 1. / (p + 1)
 Spx = (+1 / (2 * h) * derive_y(p))@ U_approx
@@ -134,6 +135,15 @@ plt.title('Q5/ Vecteur vitesse gamma=1', fontsize=10)
 #plt.savefig('how_to_plot_a_vector_in_matplotlib_fig3.png', bbox_inches='tight')
 plt.show()
 
+# Q6/
+
+u_x = 0
+u_y = 0
+for i in [p / 2 - 1, p / 2 -1]:
+    for j in [p / 2 - 1, p / 2 -1]:
+        k = int(i + j * p)
+        u_x += (Spx[k])/4
+        u_y += (Spx[k]) / 4
 
 # def reforme(U):
 #     #Permet de passer d une colonne mono indice à la matrice correspondante
