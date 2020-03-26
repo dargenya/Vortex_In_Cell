@@ -85,26 +85,46 @@ def fonction_G(N,gamma): # second membre -1*omega
 
     return GG
 
+# la solution exacte est un logarithme complexe. On ne comparera seulement les vitesses exactes et approchees
+def Sp_exact(N, gamma, pos): #vitesse exacte à pos pour un trourbillon au centre
+    p = int(np.sqrt(N))
+    pos = np.array(pos)
+    tourb = np.ones(2) * np.mean([p/2-1,p/2])
+    C = gamma/(2*np.pi)
+    
+    x, y = pos - tourb
+    
+    r = np.sqrt(x**2 + y**2)
+    if r==0:
+        print(r=0)
+    theta = np.arctan2(y,x)
+    
+    u = -C*np.sin(theta)/r
+    v = C*np.cos(theta)/r
+    return np.array([u,v])
+    
+
 
 N = 10*10
+gamma = 1
 print("------------")
 print("N = ",N)
 start = time.time()
 A = A_static(N)
-G = fonction_G(N, 1)
+G = fonction_G(N, gamma)
 end = time.time()
 print(" Temps de création des matrices : ", end-start )
 print (" Conditionnement de la matrice : ",np.linalg.cond(A))
 start = time.time()
 U_approx = np.linalg.solve(A,G)
 end = time.time()
-print(U_approx)
+#print(U_approx)
 print(" Temps d'execution de solve: ", end-start )
 
 #Q5/ On calcul le champs de vitesse
 p = int(np.sqrt(N))
 h = 1. / (p + 1)
-Spx = (+1 / (2 * h) * derive_y(p))@ U_approx
+Spx = (+1 / (2 * h) * derive_y(p)) @ U_approx
 Spy = (-1 / (2 * h) * derive_x(p)) @ U_approx
 
 # Spx = np.array(Spx)
@@ -120,12 +140,31 @@ for k in range(N):
 X = np.array(X)
 Y = np.array(Y)
 
+#convergence
+print('--- Convergence ---')
+Spx_ex = np.empty(0)
+Spy_ex = np.empty(0)
+for x in X:
+    for y in Y:
+        pos = [x,y]
+        a, b = Sp_exact(N, gamma, pos)
+        Spx_ex = np.append(Spx_ex,a)
+        Spy_ex = np.append(Spy_ex,b)
+
+error_Spx = Spx_ex - Spx
+error_Spy = Spy_ex - Spy        
+print('std of speeds are: \n Spx : {} \n Spy : {}'.format(np.std(error_Spx),np.std(error_Spy)))
+        
+
 fig, ax = plt.subplots()
 q = ax.quiver(X, Y, Spx, Spy, units='xy', scale=1)
 
 plt.grid()
 
 ax.set_aspect('equal')
+
+ax.xaxis.set_ticks([k for k in range(0,p)])
+ax.yaxis.set_ticks([k for k in range(0,p)])
 
 # plt.xlim(-5, 5)
 # plt.ylim(-5, 5)
@@ -137,13 +176,35 @@ plt.show()
 
 # Q6/
 
-u_x = 0
-u_y = 0
-for i in [p / 2 - 1, p / 2 -1]:
-    for j in [p / 2 - 1, p / 2 -1]:
+#u_x = 0
+#u_y = 0
+#for i in [p / 2 - 1, p / 2 -1]:
+#    for j in [p / 2 - 1, p / 2 -1]:
+#        k = int(i + j * p)
+#        u_x += (Spx[k])/4
+#        u_y += (Spx[k]) / 4
+    
+u_x = []
+u_y = []
+#fills in in order: bottom-left, then  top-left, bottom-right, bottom-left
+for i in [p / 2 - 1, p / 2 ]: #left/right
+    for j in [p / 2 - 1, p / 2 ]: #top/bottom
         k = int(i + j * p)
-        u_x += (Spx[k])/4
-        u_y += (Spx[k]) / 4
+        u_x.append( (Spx[k]) )
+        u_y.append( (Spx[k]) )
+u_x = np.array(u_x)
+u_y = np.array(u_y)
+
+A = (h/2)*(h/2) * np.ones(4)
+
+# vitesses au niveau du troubillon:
+ux = (np.sum(A*u_x)) / np.sum(A)
+uy = (np.sum(A*u_y)) / np.sum(A)
+
+# Q7/
+
+
+
 
 # def reforme(U):
 #     #Permet de passer d une colonne mono indice à la matrice correspondante
