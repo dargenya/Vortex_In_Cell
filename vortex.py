@@ -127,6 +127,9 @@ plt.grid()
 
 ax.set_aspect('equal')
 
+ax.xaxis.set_ticks([k for k in range(0,p)])
+ax.yaxis.set_ticks([k for k in range(0,p)])
+
 # plt.xlim(-5, 5)
 # plt.ylim(-5, 5)
 
@@ -137,13 +140,31 @@ plt.show()
 
 # Q6/
 
-u_x = 0
-u_y = 0
-for i in [p / 2 - 1, p / 2 -1]:
-    for j in [p / 2 - 1, p / 2 -1]:
+#u_x = 0
+#u_y = 0
+#for i in [p / 2 - 1, p / 2 -1]:
+#    for j in [p / 2 - 1, p / 2 -1]:
+#        k = int(i + j * p)
+#        u_x += (Spx[k])/4
+#        u_y += (Spx[k]) / 4
+    
+u_x = []
+u_y = []
+#fills in in order: bottom-left, then  top-left, bottom-right, bottom-left
+for i in [p / 2 - 1, p / 2 ]: #left/right
+    for j in [p / 2 - 1, p / 2 ]: #top/bottom
         k = int(i + j * p)
-        u_x += (Spx[k])/4
-        u_y += (Spx[k]) / 4
+        u_x.append( (Spx[k]) )
+        u_y.append( (Spx[k]) )
+u_x = np.array(u_x)
+u_y = np.array(u_y)
+
+A = (h/2)*(h/2) * np.ones(4)
+
+# vitesses au niveau du troubillon:
+ux = (np.sum(np.multiply(A,u_x))) / np.sum(A)
+uy = (np.sum(np.multiply(A,u_y))) / np.sum(A)
+
 
 # def reforme(U):
 #     #Permet de passer d une colonne mono indice à la matrice correspondante
