@@ -55,13 +55,13 @@ def derive_y(p):
 
 def A_static(N):
     p = int(np.sqrt(N))
-    h = 1./(p+1)
+    h = 1.
     A = 1. /(h*h)*laplacien(p)
     return A
 
 def fonction_G(N,gamma): # second membre -1*omega
     p = int(np.sqrt(N))
-    h = 1./(p+1)
+    h = 1.
     A = h*h
 
     # Question 2 i.e. vorticite nulle
@@ -123,7 +123,7 @@ print(" Temps d'execution de solve: ", end-start )
 
 #Q5/ On calcul le champs de vitesse
 p = int(np.sqrt(N))
-h = 1. / (p + 1)
+h = 1.
 Spx = (+1 / (2 * h) * derive_y(p)) @ U_approx
 Spy = (-1 / (2 * h) * derive_x(p)) @ U_approx
 
@@ -157,7 +157,7 @@ print('std of speeds are: \n Spx : {} \n Spy : {}'.format(np.std(error_Spx),np.s
         
 
 fig, ax = plt.subplots()
-q = ax.quiver(X, Y, Spx, Spy, units='xy', scale=1)
+q = ax.quiver(X, Y, Spx, Spy, units='xy')
 
 plt.grid()
 
