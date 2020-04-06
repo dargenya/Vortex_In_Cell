@@ -55,13 +55,13 @@ def derive_y(p):
 
 def A_static(N):
     p = int(np.sqrt(N))
-    h = 1./(p+1)
+    h = 1.
     A = 1. /(h*h)*laplacien(p)
     return A
 
 def fonction_G(N,gamma): # second membre -1*omega
     p = int(np.sqrt(N))
-    h = 1./(p+1)
+    h = 1.
     A = h*h
 
     # Question 2 i.e. vorticite nulle
@@ -96,7 +96,7 @@ def Sp_exact(N, gamma, pos): #vitesse exacte à pos pour un trourbillon au centr
     
     r = np.sqrt(x**2 + y**2)
     if r==0:
-        print(r=0)
+        print('r=0')
     theta = np.arctan2(y,x)
     
     u = -C*np.sin(theta)/r
@@ -123,41 +123,44 @@ print(" Temps d'execution de solve: ", end-start )
 
 #Q5/ On calcul le champs de vitesse
 p = int(np.sqrt(N))
-h = 1. / (p + 1)
+h = 1.
 Spx = (+1 / (2 * h) * derive_y(p)) @ U_approx
 Spy = (-1 / (2 * h) * derive_x(p)) @ U_approx
 
 # Spx = np.array(Spx)
 # Spy = np.array(Spy)
 
-X = []
-Y = []
-for k in range(N):
-    i, j = k % p, k // p
-    X.append(i)
-    Y.append(j)
-
-X = np.array(X)
-Y = np.array(Y)
+X = np.arange(p)
+Y = np.arange(p)
+XV, YV = np.meshgrid(X,Y)
+#for k in range(N):
+#    i, j = k % p, k // p
+#    X.append(i)
+#    Y.append(j)
+#
+#X = np.array(X)
+#Y = np.array(Y)
 
 #convergence
 print('--- Convergence ---')
-Spx_ex = np.empty(0)
-Spy_ex = np.empty(0)
-for x in X:
-    for y in Y:
+Spx_ex = []
+Spy_ex = []
+for y in Y:
+    for x in X:
         pos = [x,y]
         a, b = Sp_exact(N, gamma, pos)
-        Spx_ex = np.append(Spx_ex,a)
-        Spy_ex = np.append(Spy_ex,b)
+        Spx_ex.append(a)
+        Spy_ex.append(b)
 
+Spx_ex = np.array([Spx_ex]).T
+Spy_ex = np.array(Spy_ex).T
 error_Spx = Spx_ex - Spx
 error_Spy = Spy_ex - Spy        
 print('std of speeds are: \n Spx : {} \n Spy : {}'.format(np.std(error_Spx),np.std(error_Spy)))
         
 
 fig, ax = plt.subplots()
-q = ax.quiver(X, Y, Spx, Spy, units='xy', scale=1)
+q = ax.quiver(XV, YV, Spx, Spy, units='xy')
 
 plt.grid()
 
@@ -200,6 +203,36 @@ A = (h/2)*(h/2) * np.ones(4)
 # vitesses au niveau du troubillon:
 ux = (np.sum(A*u_x)) / np.sum(A)
 uy = (np.sum(A*u_y)) / np.sum(A)
+
+# generalisation de l'interpolation bilineaire
+
+def speed(pos):
+    pos = np.array(pos)
+    x, y = pos
+    a = int(x)
+    b = int(y)
+    
+    
+    u_x = []
+    u_y = []
+    #fills in in order: bottom-left, then  top-left, bottom-right, top-right
+    for i in [a , a+1 ]: #left/right
+        for j in [b , b+1 ]: #bottom/top
+            k = int(i + j * p)
+            u_x.append( (Spx[k]) )
+            u_y.append( (Spx[k]) )
+    u_x = np.array(u_x)
+    u_y = np.array(u_y)
+    
+    A = [(a+1-x)*(b+1-y) ,
+         (a+1-x)*(y-b) ,
+         (x-a)*(b+1-y) ,
+         (x-a)*(y-b)]
+    
+    ux = (np.sum(A*u_x)) / np.sum(A)
+    uy = (np.sum(A*u_y)) / np.sum(A)
+    
+    return np.array([ux, uy])
 
 # Q7/
 
