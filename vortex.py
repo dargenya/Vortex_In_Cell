@@ -161,6 +161,7 @@ print('std of speeds are: \n Spx : {} \n Spy : {}'.format(np.std(error_Spx),np.s
 
 fig, ax = plt.subplots()
 q = ax.quiver(XV, YV, Spx, Spy, units='xy')
+#ax.quiver(XV, YV, Spx_ex, Spy_ex, units='xy',color='green')
 
 plt.grid()
 
@@ -213,7 +214,7 @@ def speed(pos):
     b = int(y)
     
     
-    right = min(a+1,p-1)
+    right = min(a+1,p-1) #cas frontiere
     top = min(b+1,p-1)
     
     u_x = np.zeros(4)
@@ -227,7 +228,7 @@ def speed(pos):
             u_y[t] = Spy[k]
             t += 1
     
-    A = [right*(top-y) ,
+    A = [(right-x)*(top-y) ,
          (right-x)*(y-b) ,
          (x-a)*(top-y) ,
          (x-a)*(y-b)]
@@ -237,19 +238,157 @@ def speed(pos):
     
     return np.array([ux, uy])
 
+### Je voulais voir le champ de vitesse autour du tourbillon ,pour savoir si on pouvait implementer une methode de descente de gradient pour trouver le centre du tourbillon ###
+
+#def reforme(U):
+#    #Permet de passer d une colonne mono indice à la matrice correspondante
+#    N = len(U)
+#    p = int(np.sqrt(N))
+#    M = np.zeros((p, p))
+#    for k in range(len(U)):
+#        i,j = k%p , k//p
+#        M[i,j] = U[k]
+#    return(M)
+#
+#Sp_mag=[]
+#for y in Y:
+#    for x in X:
+#        pos = [x,y]
+#        Sp_mag.append(np.linalg.norm(speed(pos)))
+#
+#Sp_mag = np.array(Sp_mag).T
+#
+#plt.pcolormesh(X,Y,reforme(Sp_mag)) 
+#plt.show()
+
 # Q7/
 
+# Q9/
+
+# generalisation du second membre de lequation de Poisson pour une liste de tourbillons
+    
+def fonction_G(N,list_tourb):   #list_tourb est une liste contenant [[x_tourb1,y_tourb1,gamma_1],[x_tourb2,y_tourb2,gamma_2],...]
+    p = int(np.sqrt(N))
+    h = 1.
+    A = h*h
+    
+    GG = np.zeros((N,1))
+    
+    for tourb in list_tourb:
+        x, y, gamma = tourb
+        a = int(x)
+        b = int(y)
+        
+        right = min(a+1,p-1) #cas frontiere
+        top = min(b+1,p-1)
+        
+        
+        # coefficients pour le schema bilineaire
+        A = [(right-x)*(top-y) ,
+             (right-x)*(y-b) ,
+             (x-a)*(top-y) ,
+             (x-a)*(y-b)]  
+         
+        denom = (np.sum(A))**2
+             
+             
+        t = 0
+        #fills in in order: bottom-left, then  top-left, bottom-right, top-right
+        for i in [a , right ]: #left/right
+            for j in [b , top ]: #bottom/top
+                k = int(i + j * p)
+                GG[k] = - A[t] * gamma / denom
+                t += 1
+
+    return GG
 
 
+N = 10*10
+gamma = 1
+print("------------")
+print("N = ",N)
+start = time.time()
+A = A_static(N)
+# G = fonction_G(N, [[1.5,4.5,10],[7.5,4.5,10]])
+side = np.sqrt(N)
+G = fonction_G(N, [[(side+1)/2 - 1 - side/3,(side+1)/2 - 1,10],[(side+1)/2 - 1 + side/3,(side+1)/2 - 1,10]])
+end = time.time()
+print(" Temps de création des matrices : ", end-start )
+print (" Conditionnement de la matrice : ",np.linalg.cond(A))
+start = time.time()
+U_approx = np.linalg.solve(A,G)
+end = time.time()
+#print(U_approx)
+print(" Temps d'execution de solve: ", end-start )
 
-# def reforme(U):
-#     #Permet de passer d une colonne mono indice à la matrice correspondante
-#     N = len(U)
-#     p = int(np.sqrt(N))
-#     M = np.zeros((p, p))
-#     for k in range(len(U)):
-#         i,j = k%p , k//p
-#         M[i,j] = U[k]
-#     return(M)
+p = int(np.sqrt(N))
+h = 1.
+Spx = (+1 / (2 * h) * derive_y(p)) @ U_approx
+Spy = (-1 / (2 * h) * derive_x(p)) @ U_approx
 
+X = np.arange(p)
+Y = np.arange(p)
+XV, YV = np.meshgrid(X,Y)
+
+fig, ax = plt.subplots()
+q = ax.quiver(XV, YV, Spx, Spy, units='xy')
+
+plt.grid()
+
+ax.set_aspect('equal')
+
+ax.xaxis.set_ticks([k for k in range(0,p)])
+ax.yaxis.set_ticks([k for k in range(0,p)])
+
+plt.title('Q9/ Deux tourbillons', fontsize=10)
+
+plt.show()
+
+# Q 10/
+
+t = 0
+t_step = 1e-2
+t_end = 40
+
+# initialisation
+list_tourb = [[(side+1)/2 - 1 - side/3,(side+1)/2 - 1,10],
+               [(side+1)/2 - 1 + side/3,(side+1)/2 - 1,10]]
+
+store_pos = [[] for _ in range(len(list_tourb))]
+
+while t < t_end :
+    G = fonction_G(N, list_tourb)
+    U_approx = np.linalg.solve(A,G)
+    p = int(np.sqrt(N))
+    h = 1.
+    Spx = (+1 / (2 * h) * derive_y(p)) @ U_approx
+    Spy = (-1 / (2 * h) * derive_x(p)) @ U_approx
+    
+    for idx, tourb in enumerate(list_tourb):
+        pos = tourb[:-1]
+
+        store_pos[idx].append(pos)
+        
+        # schema euler explicite (ordre 1)
+        pos = pos + t_step * speed(pos)
+        
+        tourb[:-1] = pos
+    
+    t += t_step
+
+# plot position history
+fig, ax = plt.subplots()
+plt.grid()
+ax.set_aspect('equal')
+ax.xaxis.set_ticks([k for k in range(0,p)])
+ax.yaxis.set_ticks([k for k in range(0,p)])
+plt.title('Q10/ Trajectoire deux tourbillons après {}sec'.format(t), fontsize=10)
+#trajectoire
+for tourb in store_pos:
+    X = [sublist[0] for sublist in tourb]
+    Y = [sublist[1] for sublist in tourb]
+    plt.plot(X, Y)
+#etat final
+q = ax.quiver(XV, YV, Spx, Spy, units='xy')
+plt.show()
 
